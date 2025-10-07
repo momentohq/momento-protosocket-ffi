@@ -18,3 +18,7 @@ target
 .vscode
 .DS_Store
 .env
+
+# Generated FFI files
+**/*.a
+**/*.h
