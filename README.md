@@ -1,2 +1,3 @@
 # momento-protosocket-ffi
-FFI layer around the ProtosocketCacheClient in Momento's Rust SDK
+
+Foreign Function Interface layer around the ProtosocketCacheClient in Momento's Rust SDK to make the ProtosocketCacheClient usable in non-Rust Momento client libraries.
