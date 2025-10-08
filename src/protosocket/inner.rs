@@ -56,9 +56,11 @@ impl From<InnerProtosocketResult> for ProtosocketResult {
                     data: leaked_item.as_ptr(),
                     length: item_len,
                 };
-                println!("===created bytes: {:?} | data: {:?}", bytes, unsafe {
-                    std::slice::from_raw_parts(bytes.data, bytes.length)
-                });
+                println!(
+                    "[FFI INFO] created bytes: {:?} | data: {:?}",
+                    bytes,
+                    unsafe { std::slice::from_raw_parts(bytes.data, bytes.length) }
+                );
                 ProtosocketResult {
                     response_type: ProtosocketResponseType::GetHit.into(),
                     value: Box::into_raw(Box::new(bytes)),
@@ -129,7 +131,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
     match processing_result.request {
         ProtosocketRequestType::Set(set_request) => {
             println!(
-                "===Received a Set request: cache_name: {:?}, key: {:?}, value: {:?}",
+                "[FFI INFO] Received a Set request: cache_name: {:?}, key: {:?}, value: {:?}",
                 set_request.cache_name, set_request.key, set_request.value
             );
             let result = unsafe {
@@ -141,7 +143,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
                     )
                     .await
             };
-            println!("\n===Set result: {:?}", result);
+            println!("\n[FFI INFO] Set result: {:?}", result);
             unsafe {
                 (*RESPONSE_SENDER)
                     .send(from_set_result_to_inner_protosocket_result(
@@ -154,7 +156,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
         }
         ProtosocketRequestType::Get(get_request) => {
             println!(
-                "===Received a Get request: cache_name: {:?}, key: {:?}",
+                "[FFI INFO] Received a Get request: cache_name: {:?}, key: {:?}",
                 get_request.cache_name, get_request.key
             );
             let result = unsafe {
@@ -162,7 +164,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
                     .get(*get_request.cache_name, *get_request.key)
                     .await
             };
-            println!("\n===Get result: {:?}", result);
+            println!("\n[FFI INFO] Get result: {:?}", result);
             unsafe {
                 (*RESPONSE_SENDER)
                     .send(from_get_result_to_inner_protosocket_result(

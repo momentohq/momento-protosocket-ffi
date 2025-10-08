@@ -14,7 +14,7 @@ use tokio::sync::mpsc;
 use zerocopy::byte_slice::IntoByteSlice;
 
 use crate::protosocket::configuration::{
-    OverrideType, ProtosocketClientConfiguration, ProtosocketCredentialProvider,
+    ProtosocketClientConfiguration, ProtosocketCredentialProvider,
 };
 use crate::protosocket::inner::handle_received;
 use crate::protosocket::inner::InnerProtosocketResult;
@@ -29,7 +29,6 @@ use tokio::runtime::{self, Runtime};
 // seems best to ensure the tokio runtime and the protosocket client do not cross the FFI boundary
 
 pub(crate) static RUNTIME: Lazy<Arc<Runtime>> = Lazy::new(|| {
-    println!("===creating runtime");
     tokio_rustls::rustls::crypto::CryptoProvider::install_default(
         tokio_rustls::rustls::crypto::aws_lc_rs::default_provider(),
     )
@@ -72,28 +71,15 @@ pub extern "C" fn init_protosocket_cache_client(
     let config = momento::protosocket::cache::Configuration::builder()
         .timeout(Duration::from_secs(configuration.timeout_millis as u64))
         .connection_count(configuration.connection_count as u32)
+        .az_id(None)
         .build();
-    println!("===created config: {:?}", config);
 
-    let override_endpoint = unsafe {
-        std::ffi::CStr::from_ptr(credential_provider.override_endpoint)
+    let env_var_name = unsafe {
+        std::ffi::CStr::from_ptr(credential_provider.env_var_name)
             .to_string_lossy()
             .into_owned()
     };
-    let creds = match credential_provider.override_type {
-        OverrideType::None => CredentialProvider::from_env_var("MOMENTO_API_KEY".to_string())
-            .expect("auth token should be valid"),
-        OverrideType::Insecure => CredentialProvider::from_env_var("MOMENTO_API_KEY".to_string())
-            .expect("auth token should be valid")
-            .insecure_endpoint_override(&override_endpoint),
-        OverrideType::Unverified => CredentialProvider::from_env_var("MOMENTO_API_KEY".to_string())
-            .expect("auth token should be valid")
-            .unverified_tls_endpoint_override(&override_endpoint),
-        OverrideType::Tls => CredentialProvider::from_env_var("MOMENTO_API_KEY".to_string())
-            .expect("auth token should be valid")
-            .full_endpoint_override(&override_endpoint),
-    };
-    println!("===created creds: {:?}", creds);
+    let creds = CredentialProvider::from_env_var(env_var_name).expect("auth token should be valid");
 
     let client = RUNTIME.block_on(async {
         ProtosocketCacheClient::builder()
@@ -105,19 +91,16 @@ pub extern "C" fn init_protosocket_cache_client(
             .await
             .expect("failed to create client")
     });
-    println!("===created client: {:?}", client);
 
     // Start background thread for processing requests
     let (requests_sender, mut requests_receiver) =
         mpsc::channel::<ProcessingResult>(REQUEST_CHANNEL_SIZE);
     RUNTIME_HANDLE.spawn(async move {
-        println!("===Async runtime started, waiting for messages...");
         while let Some(processing_result) = requests_receiver.recv().await {
             RUNTIME_HANDLE.spawn(async move {
                 handle_received(processing_result).await;
             });
         }
-        println!("Channel closed, shutting down async task.");
     });
 
     // Start background thread for accumulating responses until FFI caller asks for them
@@ -125,17 +108,15 @@ pub extern "C" fn init_protosocket_cache_client(
     let (responses_sender, mut responses_receiver) =
         mpsc::channel::<InnerProtosocketResult>(RESPONSE_CHANNEL_SIZE);
     RUNTIME_HANDLE.spawn(async move {
-        println!("===Async runtime started, waiting for messages...");
         while let Some(response) = responses_receiver.recv().await {
             let op_id = response.operation_id;
             (*RESPONSES_ACCUMULATED).insert(response.operation_id, response);
             println!(
-                "===inserted response for operation id: {:?}, remaining item count: {:?}",
+                "[FFI INFO] inserted response for operation id: {:?}, remaining item count: {:?}",
                 op_id,
                 (*RESPONSES_ACCUMULATED).len()
             );
         }
-        println!("Channel closed, shutting down async task.");
     });
 
     unsafe {
@@ -395,7 +376,7 @@ pub extern "C" fn protosocket_cache_client_poll_responses(
     // check if the requested response is in the DashMap
     if let Some((_, response)) = (*RESPONSES_ACCUMULATED).remove(&operation_id) {
         println!(
-            "===found response for operation id: {:?}: {:?}",
+            "[FFI INFO] found response for operation id: {:?}: {:?}",
             operation_id, response
         );
         return Box::into_raw(Box::new(response.into()));

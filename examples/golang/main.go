@@ -25,15 +25,10 @@ func main() {
 		fmt.Printf("[ERROR] MOMENTO_API_KEY is not set\n")
 		return
 	}
-	if os.Getenv("MOMENTO_ENDPOINT") == "" {
-		fmt.Printf("[ERROR] MOMENTO_ENDPOINT is not set\n")
-		return
-	}
 
 	// Create FFI-compatible credential provider
 	envVarName := C.CString("MOMENTO_API_KEY")
-	endpoint := C.CString(os.Getenv("MOMENTO_ENDPOINT"))
-	creds := C.new_protosocket_credential_provider(envVarName, C.Unverified, endpoint)
+	creds := C.new_protosocket_credential_provider(envVarName)
 
 	// Create the tokio runtime and the protosocket client under the hood
 	defaultTtlMillis := C.ulonglong(60 * 1000)
