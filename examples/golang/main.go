@@ -3,7 +3,7 @@ package main
 // Note: using LDFLAGS suggested by make build output
 
 /*
-#cgo LDFLAGS: ./libmomento_protosocket_ffi.a -ldl -framework Security -framework CoreFoundation -lc++ -liconv -lSystem -lc -lm
+#cgo LDFLAGS: ./libmomento_protosocket_ffi.a -ldl -framework Security -framework CoreFoundation -lc++ -liconv -lc -lm
 #include "./momento-protosocket-ffi.h"
 #include <string.h>
 */

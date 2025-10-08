@@ -1,6 +1,6 @@
 build:
 	cargo fmt
-	RUSTFLAGS='--print=native-static-libs -C strip=symbols' cargo build --release
+	MACOSX_DEPLOYMENT_TARGET=15.0 RUSTFLAGS='--print=native-static-libs -C strip=symbols' cargo build --release
 
 build-go-example: build
 	cp ./target/release/libmomento_protosocket_ffi.a ./examples/golang
