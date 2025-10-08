@@ -42,7 +42,6 @@ func main() {
 	makeGetCall(cacheName, key)
 
 	C.destroy_protosocket_cache_client()
-
 }
 
 func convertGoStringToCBytes(string string) *C.Bytes {
@@ -109,7 +108,7 @@ func makeSetCall(cacheName string, key string, value string) {
 	}
 
 	// Free the C objects that were allocated
-	// C.free_response(response)
+	C.free_response(response)
 	C.free(unsafe.Pointer(cacheNameC))
 	C.free(unsafe.Pointer(keyC.data))
 	C.free(unsafe.Pointer(valueC.data))
@@ -162,7 +161,7 @@ func makeGetCall(cacheName string, key string) {
 		fmt.Printf("[ERROR] get error: %v\n", C.GoString(response.error_message))
 	}
 
-	// C.free_response(response)
+	C.free_response(response)
 	C.free(unsafe.Pointer(cacheNameC))
 	C.free(unsafe.Pointer(keyC.data))
 }
