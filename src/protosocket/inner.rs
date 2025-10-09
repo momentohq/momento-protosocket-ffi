@@ -14,14 +14,14 @@ pub enum ProtosocketRequestType {
 }
 
 pub struct ProtosocketSetRequest {
-    pub cache_name: Box<String>,
-    pub key: Box<Vec<u8>>,
-    pub value: Box<Vec<u8>>,
+    pub cache_name: String,
+    pub key: Vec<u8>,
+    pub value: Vec<u8>,
 }
 
 pub struct ProtosocketGetRequest {
-    pub cache_name: Box<String>,
-    pub key: Box<Vec<u8>>,
+    pub cache_name: String,
+    pub key: Vec<u8>,
 }
 
 #[repr(C)]
@@ -47,11 +47,10 @@ impl From<InnerProtosocketResult> for ProtosocketResult {
                 error_message: std::ptr::null(),
             },
             ProtosocketResponseType::GetHit => {
-                let item: Vec<u8> = result.value.into();
-                let item_len = item.len();
+                let item_len = result.value.len();
                 // Use Box::leak to prevent the Vec from being dropped
                 // This memory will be freed when free_response is called
-                let leaked_item = Box::leak(item.into_boxed_slice());
+                let leaked_item = Box::leak(result.value.into_boxed_slice());
                 let bytes = Bytes {
                     data: leaked_item.as_ptr(),
                     length: item_len,
@@ -136,11 +135,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
             );
             let result = unsafe {
                 (*PROTOSOCKET_CLIENT)
-                    .set(
-                        *set_request.cache_name,
-                        *set_request.key,
-                        *set_request.value,
-                    )
+                    .set(set_request.cache_name, set_request.key, set_request.value)
                     .await
             };
             println!("\n[FFI INFO] Set result: {:?}", result);
@@ -161,7 +156,7 @@ pub(crate) async fn handle_received(processing_result: ProcessingResult) {
             );
             let result = unsafe {
                 (*PROTOSOCKET_CLIENT)
-                    .get(*get_request.cache_name, *get_request.key)
+                    .get(get_request.cache_name, get_request.key)
                     .await
             };
             println!("\n[FFI INFO] Get result: {:?}", result);
