@@ -34,17 +34,6 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install protoc
-        run: choco install protoc
-
-      - name: Build
-        run: cargo build --verbose
-
   build-macos:
     runs-on: macos-latest
     steps:
@@ -63,3 +52,16 @@ jobs:
 
       - name: Test Go example
         run: make build-go-example && cd examples/golang && go run main.go
+
+  # TODO: fix windows build if possible -- unable to compile protosocket-rpc because
+  # of "no method named `set_reuse_port` found for struct `Socket`"
+  # build-windows:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Install protoc
+  #       run: choco install protoc
+
+  #     - name: Build
+  #       run: cargo build --verbose

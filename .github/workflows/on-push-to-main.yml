@@ -9,6 +9,48 @@ env:
   MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
 
 jobs:
+  rustfmt:
+    name: Style & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: rustfmt
+        run: make format
+
+      - name: Rigorous lint via Clippy
+        run: make lint
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo build --verbose
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Test Go example
+        run: make build-go-example && cd examples/golang && go run main.go
+        
   # TODO: readme generation
 
   # TODO: release-please
