@@ -1,0 +1,41 @@
+name: On push to main
+
+on:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+
+jobs:
+  # TODO: readme generation
+
+  # TODO: release-please
+
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+
+      - name: Dry-run semrel release to get version number
+        id: semrel_dryrun
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-initial-development-versions: true
+          force-bump-patch-version: true
+          dry: true
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ steps.semrel_dryrun.outputs.version }}"
+
+      - name: Build
+        run: |
+          rustup target list
+          cargo build --verbose
+
+  # TODO: publish the binaries
