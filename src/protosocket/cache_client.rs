@@ -52,7 +52,7 @@ pub(crate) static mut RESPONSE_SENDER: *mut mpsc::Sender<InnerProtosocketResult>
 
 pub(crate) static OPERATION_COUNTER: AtomicU64 = AtomicU64::new(0);
 pub(crate) static RESPONSES_ACCUMULATED: Lazy<DashMap<u64, InnerProtosocketResult>> =
-    Lazy::new(|| DashMap::new());
+    Lazy::new(DashMap::new);
 
 // TODO: determine how large these channels should be (configurable or no?)
 const REQUEST_CHANNEL_SIZE: usize = 1024;
@@ -135,8 +135,11 @@ pub extern "C" fn destroy_protosocket_cache_client() {
     }
 }
 
+/// # Safety
+///
+/// This function should be called when the response is no longer needed.
 #[no_mangle]
-pub extern "C" fn free_response(result: *const ProtosocketResult) {
+pub unsafe extern "C" fn free_response(result: *const ProtosocketResult) {
     if result.is_null() {
         return;
     }
@@ -164,10 +167,10 @@ pub extern "C" fn free_response(result: *const ProtosocketResult) {
             let bytes_ptr = (*result).value;
             // Free the leaked slice data
             if !(*bytes_ptr).data.is_null() {
-                let _ = Box::from_raw(std::slice::from_raw_parts_mut(
+                let _ = Box::from_raw(core::ptr::slice_from_raw_parts_mut(
                     (*bytes_ptr).data as *mut u8,
                     (*bytes_ptr).length,
-                ) as *mut [u8]);
+                ));
             }
             // Free the Bytes struct itself
             let _ = Box::from_raw(bytes_ptr as *mut Bytes);
@@ -226,8 +229,11 @@ impl From<ProtosocketResponseType> for *const c_char {
     }
 }
 
+/// # Safety
+///
+/// This function expects C-allocated strings and bytes.
 #[unsafe(no_mangle)]
-pub extern "C" fn protosocket_cache_client_set(
+pub unsafe extern "C" fn protosocket_cache_client_set(
     cache_name: *const c_char,
     key: *const Bytes,
     value: *const Bytes,
@@ -282,9 +288,9 @@ pub extern "C" fn protosocket_cache_client_set(
         let value = std::slice::from_raw_parts((*value).data, (*value).length);
 
         let request = ProtosocketRequestType::Set(ProtosocketSetRequest {
-            cache_name: Box::new(cache_name),
-            key: Box::new(key.into_byte_slice().to_vec()),
-            value: Box::new(value.into_byte_slice().to_vec()),
+            cache_name,
+            key: key.into_byte_slice().to_vec(),
+            value: value.into_byte_slice().to_vec(),
         });
         let processing_result = ProcessingResult {
             request,
@@ -300,12 +306,15 @@ pub extern "C" fn protosocket_cache_client_set(
         });
 
         response.awaiting = Box::into_raw(Box::new(awaiting_result));
-        return response;
+        response
     }
 }
 
+/// # Safety
+///
+/// This function expects C-allocated strings and bytes.
 #[unsafe(no_mangle)]
-pub extern "C" fn protosocket_cache_client_get(
+pub unsafe extern "C" fn protosocket_cache_client_get(
     cache_name: *const c_char,
     key: *const Bytes,
 ) -> ProtosocketResponse {
@@ -348,8 +357,8 @@ pub extern "C" fn protosocket_cache_client_get(
 
         // this is for passing to the async thread so it can do the async work
         let request = ProtosocketRequestType::Get(ProtosocketGetRequest {
-            cache_name: Box::new(cache_name),
-            key: Box::new(key.into_byte_slice().to_vec()),
+            cache_name,
+            key: key.into_byte_slice().to_vec(),
         });
         let processing_result = ProcessingResult {
             request,
@@ -365,7 +374,7 @@ pub extern "C" fn protosocket_cache_client_get(
         });
 
         response.awaiting = Box::into_raw(Box::new(awaiting_result));
-        return response;
+        response
     }
 }
 
@@ -381,5 +390,5 @@ pub extern "C" fn protosocket_cache_client_poll_responses(
         );
         return Box::into_raw(Box::new(response.into()));
     }
-    return std::ptr::null_mut();
+    std::ptr::null_mut()
 }

@@ -3,7 +3,7 @@ package main
 // Note: using LDFLAGS suggested by make build output
 
 /*
-#cgo LDFLAGS: ./libmomento_protosocket_ffi.a -ldl -framework Security -framework CoreFoundation -lc++ -liconv -lc -lm
+#cgo LDFLAGS: ./libmomento_protosocket_ffi.a -lgcc_s -lutil -lrt -lpthread -lm -ldl -lc
 #include "./momento-protosocket-ffi.h"
 #include <string.h>
 */
@@ -23,7 +23,7 @@ func main() {
 
 	if os.Getenv("MOMENTO_API_KEY") == "" {
 		fmt.Printf("[ERROR] MOMENTO_API_KEY is not set\n")
-		return
+		os.Exit(1)
 	}
 
 	// Create FFI-compatible credential provider

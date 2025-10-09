@@ -1,0 +1,101 @@
+name: On push to main
+
+on:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+
+jobs:
+  rustfmt:
+    name: Style & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: rustfmt
+        run: make format
+
+      - name: Rigorous lint via Clippy
+        run: make lint
+
+  build-and-test-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: make build
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Test Go example
+        run: |
+          make build-go-example
+          cd examples/golang
+          go run main_ubuntu.go
+
+  build-and-test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Build
+        run: make build
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Test Go example
+        run: |
+          make build-go-example
+          cd examples/golang
+          go run main_macos.go
+
+  # TODO: readme generation
+
+  # TODO: release-please
+
+  prepare-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+
+      - name: Dry-run semrel release to get version number
+        id: semrel_dryrun
+        uses: go-semantic-release/action@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-initial-development-versions: true
+          force-bump-patch-version: true
+          dry: true
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ steps.semrel_dryrun.outputs.version }}"
+
+      - name: Build
+        run: |
+          rustup target list
+          make build
+
+  # TODO: publish the binaries
