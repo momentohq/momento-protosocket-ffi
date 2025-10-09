@@ -17,13 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install protoc
-        run: ./scripts/install_protoc_linux.sh
-
-      - uses: Swatinem/rust-cache@v2
-
       - name: rustfmt
-        run: cargo fmt -- --check
+        run: make format
+
       - name: Rigorous lint via Clippy
         run: make lint
 
