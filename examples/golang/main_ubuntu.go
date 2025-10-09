@@ -23,7 +23,7 @@ func main() {
 
 	if os.Getenv("MOMENTO_API_KEY") == "" {
 		fmt.Printf("[ERROR] MOMENTO_API_KEY is not set\n")
-		return
+		os.Exit(1)
 	}
 
 	// Create FFI-compatible credential provider
