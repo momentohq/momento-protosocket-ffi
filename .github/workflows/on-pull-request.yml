@@ -96,6 +96,11 @@ jobs:
           ls target/${{ matrix.architecture.target }}/release
         shell: bash
 
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
       - name: Try testing with example
         run: |
           cp target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
@@ -179,6 +184,11 @@ jobs:
         run: |
           ls target/${{ matrix.architecture.target }}/release
         shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
 
       - name: Try testing with example
         run: |
