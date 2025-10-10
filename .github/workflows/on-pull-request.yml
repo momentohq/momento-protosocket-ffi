@@ -118,7 +118,7 @@ jobs:
           go run main_macos.go
 
   try-macos-build-matrix:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
         architecture:
