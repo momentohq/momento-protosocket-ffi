@@ -456,6 +456,7 @@ jobs:
 
   build-and-publish-macos-arm64:
     runs-on: macos-15
+    needs: [release-please]
     steps:
       - uses: actions/checkout@v3
 
