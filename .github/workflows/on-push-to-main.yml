@@ -11,6 +11,8 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+  RUSTFLAGS: --print=native-static-libs -C strip=symbols
+  MACOSX_DEPLOYMENT_TARGET: 15.0
 
 jobs:
   rustfmt:
@@ -25,18 +27,50 @@ jobs:
       - name: Rigorous lint via Clippy
         run: make lint
 
-  build-and-test-ubuntu:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
-
+  build-and-test-ubuntu-x64:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
       - name: Build
-        run: make build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
 
       - name: Install Go
         uses: actions/setup-go@v3
@@ -45,31 +79,171 @@ jobs:
 
       - name: Test Go example
         run: |
-          make build-go-example
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
           go run main_ubuntu.go
 
-  build-and-test-macos:
-    runs-on: macos-latest
+  build-and-test-ubuntu-arm64:
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Test Go example
+        run: |
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main_ubuntu.go
+
+  build-and-test-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Install protoc
         run: brew install protobuf
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
       - name: Build
-        run: make build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
 
       - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.x
 
-      - name: Test Go example
+      - name: Try testing with example
         run: |
-          make build-go-example
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main_macos.go
+
+  build-and-test-macos-arm64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Try testing with example
+        run: |
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
           go run main_macos.go
 
@@ -86,38 +260,30 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}   
 
-  publish-macos-assets:
-    runs-on: ubuntu-latest
+  build-and-publish-ubuntu-x64:
+    runs-on: ubuntu-24.04
     needs: [release-please]
-    strategy:
-      matrix:
-        architecture:
-          - { target: x86_64-apple-darwin, use-cross: false }
-          - { target: aarch64-apple-darwin, use-cross: true }
-    env:
-      MACOSX_DEPLOYMENT_TARGET: 15.0
-      RUSTFLAGS: --print=native-static-libs -C strip=symbols
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
-      - name: Print version number
-        run: |
-          echo "Version number: ${{ needs.release-please.outputs.version }}"
-
-      - name: Install protoc
-        run: brew install protobuf
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.architecture.target }}
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
 
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
@@ -129,25 +295,26 @@ jobs:
           cargo -V
           rustc -V
 
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: ${{ matrix.architecture.use-cross }}
-          command: build
-          args: --locked --release --target=${{ matrix.architecture.target }}
-  
-      - name: Inspect Build
+      - name: Find .h file
         run: |
           ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
           ls target/release
         shell: bash
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ needs.release-please.outputs.version }}"
 
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.${{ matrix.architecture.target }}.tar.gz"
+          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.x86_64-linux.tar.gz"
           HEADER_FILE="./target/momento-protosocket-ffi.h"
-          LIBRARY_FILE="./target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a"
+          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
@@ -157,33 +324,91 @@ jobs:
           curl --data-binary @$ARCHIVE_FILE -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
         shell: bash
 
-  publish-linux-assets:
-    runs-on: ubuntu-latest
+  build-and-publish-ubuntu-arm64:
+    runs-on: ubuntu-24.04-arm
     needs: [release-please]
-    strategy:
-      matrix:
-        architecture:
-          - { target: aarch64-unknown-linux-gnu, use-cross: true }
-          - { target: x86_64-unknown-linux-gnu, use-cross: true }
-    env:
-      RUSTFLAGS: --print=native-static-libs -C strip=symbols
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
-      - name: Print version number
-        run: |
-          echo "Version number: ${{ needs.release-please.outputs.version }}"
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.architecture.target }}
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
-  
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ needs.release-please.outputs.version }}"
+
+      - name: Publish the C static library and header file
+        run: |
+          VERSION=${{ needs.release-please.outputs.version }}
+          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.arm64-linux.tar.gz"
+          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
+          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
+          RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
+          GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
+          echo $GH_ASSET
+          curl --data-binary @$ARCHIVE_FILE -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
+        shell: bash
+
+  build-and-publish-macos-x64:
+    runs-on: macos-15-intel
+    needs: [release-please]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
         run: |
@@ -197,22 +422,89 @@ jobs:
       - name: Build
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.architecture.use-cross }}
           command: build
-          args: --locked --release --target=${{ matrix.architecture.target }}
+          args: --locked --release
   
-      - name: Inspect Build
+      - name: Find .h file
         run: |
           ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
           ls target/release
         shell: bash
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ needs.release-please.outputs.version }}"
 
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.${{ matrix.architecture.target }}.tar.gz"
+          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.x86_64-macos.tar.gz"
           HEADER_FILE="./target/momento-protosocket-ffi.h"
-          LIBRARY_FILE="./target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a"
+          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
+          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
+          RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
+          GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
+          echo $GH_ASSET
+          curl --data-binary @$ARCHIVE_FILE -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
+        shell: bash
+
+  build-and-publish-macos-arm64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ needs.release-please.outputs.version }}"
+
+      - name: Publish the C static library and header file
+        run: |
+          VERSION=${{ needs.release-please.outputs.version }}
+          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.arm64-macos.tar.gz"
+          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
