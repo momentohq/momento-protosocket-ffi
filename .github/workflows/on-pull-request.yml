@@ -86,12 +86,22 @@ jobs:
           command: build
           args: --locked --release --target=${{ matrix.architecture.target }}
   
-      - name: Inspect Build
+      - name: Find .h file
         run: |
           ls target
-          ls target/release
+        shell: bash
+
+      - name: Find .a file
+        run: |
           ls target/${{ matrix.architecture.target }}/release
         shell: bash
+
+      - name: Try testing with example
+        run: |
+          cp target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main_ubuntu.go
 
   build-and-test-macos:
     runs-on: macos-latest
@@ -160,12 +170,22 @@ jobs:
           command: build
           args: --locked --release --target=${{ matrix.architecture.target }}
   
-      - name: Inspect Build
+      - name: Find .h file
         run: |
           ls target
-          ls target/release
+        shell: bash
+
+      - name: Find .a file
+        run: |
           ls target/${{ matrix.architecture.target }}/release
         shell: bash
+
+      - name: Try testing with example
+        run: |
+          cp target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main_macos.go
 
   # TODO: fix windows build if possible -- unable to compile protosocket-rpc because
   # of "no method named `set_reuse_port` found for struct `Socket`"
