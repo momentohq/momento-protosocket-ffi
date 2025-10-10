@@ -47,6 +47,52 @@ jobs:
           cd examples/golang
           go run main_ubuntu.go
 
+  try-linux-build-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+          - { target: aarch64-unknown-linux-gnu, use-cross: true }
+          - { target: x86_64-unknown-linux-gnu, use-cross: true }
+    env:
+      RUSTFLAGS: --print=native-static-libs -C strip=symbols
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.architecture.target }}
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+  
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.architecture.use-cross }}
+          command: build
+          args: --locked --release --target=${{ matrix.architecture.target }}
+  
+      - name: Inspect Build
+        run: |
+          ls target
+          ls target/release
+          ls target/${{ matrix.architecture.target }}/release
+        shell: bash
+
   build-and-test-macos:
     runs-on: macos-latest
     steps:
@@ -70,6 +116,56 @@ jobs:
           make build-go-example
           cd examples/golang
           go run main_macos.go
+
+  try-macos-build-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+          - { target: x86_64-apple-darwin, use-cross: false }
+          - { target: aarch64-apple-darwin, use-cross: true }
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 15.0
+      RUSTFLAGS: --print=native-static-libs -C strip=symbols
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.architecture.target }}
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.architecture.use-cross }}
+          command: build
+          args: --locked --release --target=${{ matrix.architecture.target }}
+  
+      - name: Inspect Build
+        run: |
+          ls target
+          ls target/release
+          ls target/${{ matrix.architecture.target }}/release
+        shell: bash
 
   # TODO: fix windows build if possible -- unable to compile protosocket-rpc because
   # of "no method named `set_reuse_port` found for struct `Socket`"
