@@ -7,6 +7,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+  RUSTFLAGS: --print=native-static-libs -C strip=symbols
+  MACOSX_DEPLOYMENT_TARGET: 15.0
 
 jobs:
   # TODO: verify readme generation
@@ -23,18 +25,50 @@ jobs:
       - name: Rigorous lint via Clippy
         run: make lint
 
-  build-and-test-ubuntu:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
-
+  build-and-test-ubuntu-x64:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
       - name: Build
-        run: make build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
 
       - name: Install Go
         uses: actions/setup-go@v3
@@ -43,33 +77,173 @@ jobs:
 
       - name: Test Go example
         run: |
-          make build-go-example
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_ubuntu.go
+          go run main.go
 
-  build-and-test-macos:
-    runs-on: macos-latest
+  build-and-test-ubuntu-arm64:
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Test Go example
+        run: |
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main.go
+
+  build-and-test-macos-x64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Install protoc
         run: brew install protobuf
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
       - name: Build
-        run: make build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
 
       - name: Install Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.x
 
-      - name: Test Go example
+      - name: Try testing with example
         run: |
-          make build-go-example
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_macos.go
+          go run main.go
+
+  build-and-test-macos-arm64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Try testing with example
+        run: |
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main.go
 
   # TODO: fix windows build if possible -- unable to compile protosocket-rpc because
   # of "no method named `set_reuse_port` found for struct `Socket`"
