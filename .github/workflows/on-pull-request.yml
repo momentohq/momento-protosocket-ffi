@@ -80,7 +80,7 @@ jobs:
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_ubuntu.go
+          go run main.go
 
   build-and-test-ubuntu-arm64:
     runs-on: ubuntu-24.04-arm
@@ -137,7 +137,7 @@ jobs:
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_ubuntu.go
+          go run main.go
 
   build-and-test-macos-x64:
     runs-on: macos-15-intel
@@ -190,7 +190,7 @@ jobs:
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_macos.go
+          go run main.go
 
   build-and-test-macos-arm64:
     runs-on: macos-15
@@ -243,7 +243,7 @@ jobs:
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_macos.go
+          go run main.go
 
   # TODO: fix windows build if possible -- unable to compile protosocket-rpc because
   # of "no method named `set_reuse_port` found for struct `Socket`"
