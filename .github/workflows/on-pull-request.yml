@@ -7,6 +7,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   MOMENTO_API_KEY: ${{ secrets.ALPHA_TEST_AUTH_TOKEN }}
+  RUSTFLAGS: --print=native-static-libs -C strip=symbols
+  MACOSX_DEPLOYMENT_TARGET: 15.0
 
 jobs:
   # TODO: verify readme generation
@@ -23,52 +25,26 @@ jobs:
       - name: Rigorous lint via Clippy
         run: make lint
 
-  build-and-test-ubuntu:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
-
+  build-and-test-ubuntu-x64:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Build
-        run: make build
-
-      - name: Install Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.19.x
-
-      - name: Test Go example
-        run: |
-          make build-go-example
-          cd examples/golang
-          go run main_ubuntu.go
-
-  try-linux-build-matrix:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        architecture:
-          - { target: aarch64-unknown-linux-gnu, use-cross: true }
-          - { target: x86_64-unknown-linux-gnu, use-cross: true }
-    env:
-      RUSTFLAGS: --print=native-static-libs -C strip=symbols
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.architecture.target }}
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
-  
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
         run: |
@@ -79,13 +55,11 @@ jobs:
           cargo -V
           rustc -V
 
-      - name: Build
-        uses: actions-rs/cargo@v1
+      - name: Install Go
+        uses: actions/setup-go@v3
         with:
-          use-cross: ${{ matrix.architecture.use-cross }}
-          command: build
-          args: --locked --release --target=${{ matrix.architecture.target }}
-  
+          go-version: 1.19.x
+
       - name: Find .h file
         run: |
           ls target
@@ -93,7 +67,7 @@ jobs:
 
       - name: Find .a file
         run: |
-          ls target/${{ matrix.architecture.target }}/release
+          ls target/release
         shell: bash
 
       - name: Install Go
@@ -101,26 +75,57 @@ jobs:
         with:
           go-version: 1.19.x
 
-      - name: Try testing with example
-        if: matrix.architecture.target == 'x86_64-unknown-linux-gnu'
+      - name: Test Go example
         run: |
-          cp target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
           go run main_ubuntu.go
 
-  build-and-test-macos:
-    runs-on: macos-latest
+  build-and-test-ubuntu-arm64:
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install protoc
-        run: brew install protobuf
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
 
       - name: Build
-        run: make build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
 
       - name: Install Go
         uses: actions/setup-go@v3
@@ -129,24 +134,15 @@ jobs:
 
       - name: Test Go example
         run: |
-          make build-go-example
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
-          go run main_macos.go
+          go run main_ubuntu.go
 
-  try-macos-build-matrix:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        architecture:
-          - { target: x86_64-apple-darwin, use-cross: false }
-          - { target: aarch64-apple-darwin, use-cross: true }
-    env:
-      MACOSX_DEPLOYMENT_TARGET: 15.0
-      RUSTFLAGS: --print=native-static-libs -C strip=symbols
+  build-and-test-macos-x64:
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
       - name: Install protoc
         run: brew install protobuf
@@ -155,7 +151,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.architecture.target }}
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
 
@@ -172,9 +167,8 @@ jobs:
       - name: Build
         uses: actions-rs/cargo@v1
         with:
-          use-cross: ${{ matrix.architecture.use-cross }}
           command: build
-          args: --locked --release --target=${{ matrix.architecture.target }}
+          args: --locked --release
   
       - name: Find .h file
         run: |
@@ -183,7 +177,7 @@ jobs:
 
       - name: Find .a file
         run: |
-          ls target/${{ matrix.architecture.target }}/release
+          ls target/release
         shell: bash
 
       - name: Install Go
@@ -192,9 +186,61 @@ jobs:
           go-version: 1.19.x
 
       - name: Try testing with example
-        if: matrix.architecture.target == 'aarch64-apple-darwin'
         run: |
-          cp target/${{ matrix.architecture.target }}/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
+          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cd examples/golang
+          go run main_macos.go
+
+  build-and-test-macos-arm64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal # minimal component installation (ie, no documentation)
+
+      - name: Show version information (Rust, cargo, GCC)
+        shell: bash
+        run: |
+          gcc --version || true
+          rustup -V
+          rustup toolchain list
+          rustup default
+          cargo -V
+          rustc -V
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --locked --release
+  
+      - name: Find .h file
+        run: |
+          ls target
+        shell: bash
+
+      - name: Find .a file
+        run: |
+          ls target/release
+        shell: bash
+
+      - name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+
+      - name: Try testing with example
+        run: |
+          cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
           cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
           cd examples/golang
           go run main_macos.go
