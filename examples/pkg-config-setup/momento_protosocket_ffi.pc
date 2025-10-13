@@ -1,0 +1,8 @@
+libdir=/path/to/folder/containing/momento-protosocket-ffi/files
+
+Name: momento_protosocket_ffi
+Description: The Momento protosocket FFI library
+URL: https://github.com/momentohq/momento-protosocket-ffi
+Version: 0.1.0
+Cflags: -I${libdir}
+Libs.private: -L${libdir} -lmomento_protosocket_ffi

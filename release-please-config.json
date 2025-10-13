@@ -20,6 +20,9 @@
           "section": "Miscellaneous",
           "hidden": false
         }
+      ],
+      "extra-files": [
+        "examples/pkg-config-setup/momento_protosocket_ffi.pc"
       ]
     }
   }
