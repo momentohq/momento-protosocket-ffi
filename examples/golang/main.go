@@ -6,7 +6,7 @@ package main
 #cgo LDFLAGS: ./libmomento_protosocket_ffi.a -ldl -lm -lc
 #cgo !darwin LDFLAGS: -lgcc_s -lutil -lrt -lpthread
 #cgo darwin LDFLAGS: -framework Security -framework CoreFoundation -lc++ -liconv
-#include "./momento-protosocket-ffi.h"
+#include "./momento_protosocket_ffi.h"
 #include <string.h>
 */
 import "C"
