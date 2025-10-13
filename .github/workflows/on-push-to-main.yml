@@ -80,7 +80,7 @@ jobs:
       - name: Test Go example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -137,7 +137,7 @@ jobs:
       - name: Test Go example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -190,7 +190,7 @@ jobs:
       - name: Try testing with example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -243,7 +243,7 @@ jobs:
       - name: Try testing with example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -312,8 +312,8 @@ jobs:
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.x86_64-linux.tar.gz"
-          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-linux.tar.gz"
+          HEADER_FILE="./target/momento_protosocket_ffi.h"
           LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
@@ -379,8 +379,8 @@ jobs:
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.arm64-linux.tar.gz"
-          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-linux.tar.gz"
+          HEADER_FILE="./target/momento_protosocket_ffi.h"
           LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
@@ -442,8 +442,8 @@ jobs:
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.x86_64-macos.tar.gz"
-          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-macos.tar.gz"
+          HEADER_FILE="./target/momento_protosocket_ffi.h"
           LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
@@ -503,8 +503,8 @@ jobs:
       - name: Publish the C static library and header file
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
-          ARCHIVE_FILE="momento-protosocket-ffi-$VERSION.arm64-macos.tar.gz"
-          HEADER_FILE="./target/momento-protosocket-ffi.h"
+          ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-macos.tar.gz"
+          HEADER_FILE="./target/momento_protosocket_ffi.h"
           LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
           tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
