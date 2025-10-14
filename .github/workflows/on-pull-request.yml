@@ -78,7 +78,7 @@ jobs:
       - name: Test Go example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -135,7 +135,7 @@ jobs:
       - name: Test Go example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -188,7 +188,7 @@ jobs:
       - name: Try testing with example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 
@@ -241,7 +241,7 @@ jobs:
       - name: Try testing with example
         run: |
           cp target/release/libmomento_protosocket_ffi.a examples/golang/libmomento_protosocket_ffi.a
-          cp target/momento-protosocket-ffi.h examples/golang/momento-protosocket-ffi.h
+          cp target/momento_protosocket_ffi.h examples/golang/momento_protosocket_ffi.h
           cd examples/golang
           go run main.go
 

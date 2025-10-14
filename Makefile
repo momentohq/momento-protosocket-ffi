@@ -3,7 +3,7 @@ build:
 
 build-go-example: build
 	cp ./target/release/libmomento_protosocket_ffi.a ./examples/golang
-	cp ./target/momento-protosocket-ffi.h ./examples/golang
+	cp ./target/momento_protosocket_ffi.h ./examples/golang
 
 format:
 	cargo fmt
