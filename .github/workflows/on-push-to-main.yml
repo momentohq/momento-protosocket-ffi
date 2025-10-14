@@ -338,9 +338,9 @@ jobs:
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-linux.tar.gz"
-          HEADER_FILE="./target/momento_protosocket_ffi.h"
-          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
-          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
+          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -406,9 +406,9 @@ jobs:
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-linux.tar.gz"
-          HEADER_FILE="./target/momento_protosocket_ffi.h"
-          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
-          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
+          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -470,9 +470,9 @@ jobs:
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-macos.tar.gz"
-          HEADER_FILE="./target/momento_protosocket_ffi.h"
-          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
-          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
+          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -532,9 +532,9 @@ jobs:
         run: |
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-macos.tar.gz"
-          HEADER_FILE="./target/momento_protosocket_ffi.h"
-          LIBRARY_FILE="./target/release/libmomento_protosocket_ffi.a"
-          tar -zcvf $ARCHIVE_FILE $HEADER_FILE $LIBRARY_FILE
+          cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
+          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
