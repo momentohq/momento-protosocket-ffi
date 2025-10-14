@@ -1,3 +1,3 @@
 pub mod cache_client;
 pub mod configuration;
-mod inner;
+pub mod inner;

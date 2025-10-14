@@ -80,7 +80,7 @@ impl From<InnerProtosocketResult> for ProtosocketResult {
     }
 }
 
-fn from_set_result_to_inner_protosocket_result(
+pub fn from_set_result_to_inner_protosocket_result(
     result: Result<SetResponse, MomentoError>,
     operation_id: u64,
 ) -> InnerProtosocketResult {
@@ -100,7 +100,7 @@ fn from_set_result_to_inner_protosocket_result(
     }
 }
 
-fn from_get_result_to_inner_protosocket_result(
+pub fn from_get_result_to_inner_protosocket_result(
     result: Result<GetResponse, MomentoError>,
     operation_id: u64,
 ) -> InnerProtosocketResult {

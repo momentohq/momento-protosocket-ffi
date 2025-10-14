@@ -16,12 +16,11 @@ use zerocopy::byte_slice::IntoByteSlice;
 use crate::protosocket::configuration::{
     ProtosocketClientConfiguration, ProtosocketCredentialProvider,
 };
-use crate::protosocket::inner::handle_received;
+use crate::protosocket::inner::{from_get_result_to_inner_protosocket_result, from_set_result_to_inner_protosocket_result, handle_received, ProtosocketSetRequest};
 use crate::protosocket::inner::InnerProtosocketResult;
 use crate::protosocket::inner::ProcessingResult;
 use crate::protosocket::inner::ProtosocketGetRequest;
 use crate::protosocket::inner::ProtosocketRequestType;
-use crate::protosocket::inner::ProtosocketSetRequest;
 
 use once_cell::sync::Lazy;
 use tokio::runtime::{self, Runtime};
@@ -216,6 +215,14 @@ pub enum ProtosocketResponseType {
     Error,
 }
 
+struct SendPtr(*mut std::ffi::c_void);
+unsafe impl Send for SendPtr {}
+
+pub type ProtosocketCallback = unsafe extern "C" fn(
+    result: *mut ProtosocketResult,
+    user_data: *mut std::ffi::c_void,
+);
+
 impl From<ProtosocketResponseType> for *const c_char {
     fn from(response_type: ProtosocketResponseType) -> Self {
         let response_type = match response_type {
@@ -391,4 +398,117 @@ pub extern "C" fn protosocket_cache_client_poll_responses(
         return Box::into_raw(Box::new(response.into()));
     }
     std::ptr::null_mut()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn protosocket_cache_client_set_with_callback(
+    cache_name: *const c_char,
+    key: *const Bytes,
+    value: *const Bytes,
+    callback: ProtosocketCallback,
+    user_data: *mut std::ffi::c_void,
+) {
+    if cache_name.is_null() {
+        let error_result = ProtosocketResult {
+            response_type: ProtosocketResponseType::Error.into(),
+            value: std::ptr::null(),
+            error_message: CString::new("cache_name is null")
+                .expect("failed to convert to CString")
+                .into_raw(),
+        };
+        callback(Box::into_raw(Box::new(error_result)), user_data);
+        return;
+    }
+    if key.is_null() {
+        let error_result = ProtosocketResult {
+            response_type: ProtosocketResponseType::Error.into(),
+            value: std::ptr::null(),
+            error_message: CString::new("key is null")
+                .expect("failed to convert to CString")
+                .into_raw(),
+        };
+        callback(Box::into_raw(Box::new(error_result)), user_data);
+        return;
+    }
+    if value.is_null() {
+        let error_result = ProtosocketResult {
+            response_type: ProtosocketResponseType::Error.into(),
+            value: std::ptr::null(),
+            error_message: CString::new("value is null")
+                .expect("failed to convert to CString")
+                .into_raw(),
+        };
+        callback(Box::into_raw(Box::new(error_result)), user_data);
+        return;
+    }
+
+    unsafe {
+        let cache_name = std::ffi::CStr::from_ptr(cache_name)
+            .to_string_lossy()
+            .into_owned();
+        let key = std::slice::from_raw_parts((*key).data, (*key).length);
+        let value = std::slice::from_raw_parts((*value).data, (*value).length);
+
+        let user_data = SendPtr(user_data);
+
+        RUNTIME_HANDLE.clone().spawn(async move {
+            let client = PROTOSOCKET_CLIENT.as_ref().expect("PROTOSOCKET_CLIENT is null");
+            let result = client.set(&cache_name, key, value).await;
+
+            let inner_result = from_set_result_to_inner_protosocket_result(result, 0);
+            let proto_result: ProtosocketResult = inner_result.into();
+
+            callback(Box::into_raw(Box::new(proto_result)), user_data.0);
+        });
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn protosocket_cache_client_get_with_callback(
+    cache_name: *const c_char,
+    key: *const Bytes,
+    callback: ProtosocketCallback,
+    user_data: *mut std::ffi::c_void,
+) {
+    if cache_name.is_null() {
+        let error_result = ProtosocketResult {
+            response_type: ProtosocketResponseType::Error.into(),
+            value: std::ptr::null(),
+            error_message: CString::new("cache_name is null")
+                .expect("failed to convert to CString")
+                .into_raw(),
+        };
+        callback(Box::into_raw(Box::new(error_result)), user_data);
+        return;
+    }
+    if key.is_null() {
+        let error_result = ProtosocketResult {
+            response_type: ProtosocketResponseType::Error.into(),
+            value: std::ptr::null(),
+            error_message: CString::new("key is null")
+                .expect("failed to convert to CString")
+                .into_raw(),
+        };
+        callback(Box::into_raw(Box::new(error_result)), user_data);
+        return;
+    }
+
+    unsafe {
+        let cache_name = std::ffi::CStr::from_ptr(cache_name)
+            .to_string_lossy()
+            .into_owned();
+        let key = std::slice::from_raw_parts((*key).data, (*key).length);
+
+        let user_data = SendPtr(user_data);
+
+        RUNTIME_HANDLE.clone().spawn(async move {
+            let client = PROTOSOCKET_CLIENT.as_ref().expect("PROTOSOCKET_CLIENT is null");
+            let result = client.get(&cache_name, key).await;
+
+            let inner_result = from_get_result_to_inner_protosocket_result(result, 0);
+            let proto_result: ProtosocketResult = inner_result.into();
+
+            callback(Box::into_raw(Box::new(proto_result)), user_data.0);
+        });
+    }
 }
