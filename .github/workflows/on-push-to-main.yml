@@ -265,6 +265,7 @@ jobs:
   build-and-publish-ubuntu-x64:
     runs-on: ubuntu-24.04
     needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -327,6 +328,7 @@ jobs:
   build-and-publish-ubuntu-arm64:
     runs-on: ubuntu-24.04-arm
     needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -394,6 +396,7 @@ jobs:
   build-and-publish-macos-x64:
     runs-on: macos-15-intel
     needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -457,6 +460,7 @@ jobs:
   build-and-publish-macos-arm64:
     runs-on: macos-15
     needs: [release-please]
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v3
 
