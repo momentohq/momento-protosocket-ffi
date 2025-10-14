@@ -169,11 +169,9 @@ func makeSetCallWithCallback(cacheName string, key string, value string) {
 
 func makeGetCallWithCallback(cacheName string, key string) {
 	cacheNameC := C.CString(cacheName)
+	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
-	defer func() {
-		C.free(unsafe.Pointer(cacheNameC))
-		C.free(unsafe.Pointer(keyC.data))
-	}()
+	defer C.free(unsafe.Pointer(keyC.data))
 
 	responseCh := make(chan GetResponse, 1)
 
