@@ -11,7 +11,28 @@ env:
   MACOSX_DEPLOYMENT_TARGET: 15.0
 
 jobs:
-  # TODO: verify readme generation
+  verify-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Verify README generation
+        uses: momentohq/standards-and-practices/github-actions/oss-readme-template@gh-actions-v2
+        with:
+          project_status: official
+          project_stability: alpha
+          project_type: other
+          template_file: ./README.template.md
+          output_file: ./README.md
+
+      - name: Verify examples README generation
+        uses: momentohq/standards-and-practices/github-actions/oss-readme-template@gh-actions-v2
+        with:
+          project_status: official
+          project_stability: alpha
+          project_type: other
+          template_file: ./examples/README.template.md
+          output_file: ./examples/README.md
 
   rustfmt:
     name: Style & Lint
