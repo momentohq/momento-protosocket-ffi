@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.1.0...v0.1.1) (2025-10-15)
+
+
+### Miscellaneous
+
+* remove directory structure from released tar files, add pkg-config template file ([#25](https://github.com/momentohq/momento-protosocket-ffi/issues/25)) ([868adc1](https://github.com/momentohq/momento-protosocket-ffi/commit/868adc1f93a9602ac6a887ad310917d4a6d58dff))
+
 ## 0.1.0 (2025-10-14)
 
 
