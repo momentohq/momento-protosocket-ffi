@@ -339,9 +339,9 @@ jobs:
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-linux.tar.gz"
           cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
-          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
-          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a ./momento_protosocket_ffi.pc
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -408,9 +408,9 @@ jobs:
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-linux.tar.gz"
           cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
-          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
-          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a ./momento_protosocket_ffi.pc
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -473,9 +473,9 @@ jobs:
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.x86_64-macos.tar.gz"
           cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
-          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
-          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a ./momento_protosocket_ffi.pc
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
@@ -536,9 +536,9 @@ jobs:
           VERSION=${{ needs.release-please.outputs.version }}
           ARCHIVE_FILE="momento_protosocket_ffi-$VERSION.arm64-macos.tar.gz"
           cp ./target/momento_protosocket_ffi.h ./momento_protosocket_ffi.h
-          cp ./target/release/libmomento_protosocket_ffi.a ./momento_protosocket_ffi.a
+          cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
-          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./momento_protosocket_ffi.a ./momento_protosocket_ffi.pc
+          tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
           AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
