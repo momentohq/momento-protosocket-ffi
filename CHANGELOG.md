@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.2.0...v0.2.1) (2025-10-15)
+
+
+### Miscellaneous
+
+* Switch the FFI to a string-based API key instead of an env var ([#31](https://github.com/momentohq/momento-protosocket-ffi/issues/31)) ([b79f556](https://github.com/momentohq/momento-protosocket-ffi/commit/b79f556de8c5d22a3ac5970948c08c5a0fae76ae))
+
 ## [0.2.0](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.1.1...v0.2.0) (2025-10-15)
 
 
