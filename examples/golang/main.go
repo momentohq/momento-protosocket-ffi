@@ -1,20 +1,39 @@
 package main
 
-// Note: using LDFLAGS suggested by make build output
-
 /*
 #cgo LDFLAGS: ./libmomento_protosocket_ffi.a -ldl -lm -lc
 #cgo !darwin LDFLAGS: -lgcc_s -lutil -lrt -lpthread
 #cgo darwin LDFLAGS: -framework Security -framework CoreFoundation -lc++ -liconv
 #include "./momento_protosocket_ffi.h"
 #include <string.h>
+
+extern void setCallback(ProtosocketResult* result, void* user_data);
+extern void getCallback(ProtosocketResult* result, void* user_data);
 */
 import "C"
 import (
 	"fmt"
 	"os"
-	"time"
+	"sync"
+	"sync/atomic"
 	"unsafe"
+)
+
+type SetResponse struct {
+	Success bool
+	Error   string
+}
+
+type GetResponse struct {
+	Hit   bool
+	Value []byte
+	Error string
+}
+
+var (
+	setContexts sync.Map // map[uint64]chan SetResponse
+	getContexts sync.Map // map[uint64]chan GetResponse
+	nextID      uint64   // atomic counter
 )
 
 func main() {
@@ -64,106 +83,126 @@ func convertCBytesToGoBytes(c_bytes *C.Bytes) []byte {
 	return C.GoBytes(unsafe.Pointer(c_bytes.data), C.int(c_bytes.length))
 }
 
-func makeSetCall(cacheName string, key string, value string) {
-	cacheNameC := C.CString(cacheName)
-	keyC := convertGoStringToCBytes(key)
-	valueC := convertGoStringToCBytes(value)
+//export setCallback
+func setCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
+	// Decode the channel ID from the pointer
+	id := uint64(uintptr(userData))
 
-	// Kick off the set operation (runs asynchronously on the tokio runtime) and
-	// receive the initial response with pointers to error or response object
-	initialResponse := C.protosocket_cache_client_set(cacheNameC, keyC, valueC)
-
-	// If it's already completed, we probably received an error
-	if initialResponse.completed != nil {
-		fmt.Printf("[ERROR] initialResponse.completed is not nil: %v %v\n", initialResponse.completed.response_type, initialResponse.completed.error_message)
+	// Load and delete the channel from the map. If there is no channel, the callback can't send a response
+	chInterface, ok := setContexts.LoadAndDelete(id)
+	if !ok {
+		C.free_response(result)
 		return
 	}
+	ch := chInterface.(chan SetResponse)
 
-	// If both completed and awaiting pointers are nil, something went wrong
-	if initialResponse.awaiting == nil {
-		fmt.Printf("[ERROR] initialResponse.awaiting is unexpectedly nil\n")
-		return
-	}
-
-	// Otherwise we should be awaiting a response object and FFI
-	// should have provided us with an operation id to poll for.
-	op_id := initialResponse.awaiting.operation_id
-	fmt.Printf("[INFO] operation id: %v\n", op_id)
-
-	// Poll until we get a response
-	var response *C.ProtosocketResult
-	for {
-		response = C.protosocket_cache_client_poll_responses(op_id)
-		if response != nil {
-			break
-		}
-		// Poll as frequently as desired
-		time.Sleep(10 * time.Microsecond)
-	}
-
-	// Once the response is received, parse response type to determine success or error
-	responseType := C.GoString(response.response_type)
+	// Convert the result to a set response
+	responseType := C.GoString(result.response_type)
+	var response SetResponse
 	if responseType == "SetSuccess" {
-		fmt.Printf("[INFO] set success\n")
+		response.Success = true
 	} else if responseType == "Error" {
-		fmt.Printf("[ERROR] set error: %v\n", C.GoString(response.error_message))
+		response.Error = C.GoString(result.error_message)
 	}
 
-	// Free the C objects that were allocated
-	C.free_response(response)
-	C.free(unsafe.Pointer(cacheNameC))
-	C.free(unsafe.Pointer(keyC.data))
-	C.free(unsafe.Pointer(valueC.data))
+	// Send the response to the original caller
+	ch <- response
+	C.free_response(result)
+}
+
+//export getCallback
+func getCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
+	// Decode the channel ID from the pointer
+	id := uint64(uintptr(userData))
+
+	// Load and delete the channel from the map. If there is no channel, the callback can't send a response
+	chInterface, ok := getContexts.LoadAndDelete(id)
+	if !ok {
+		C.free_response(result)
+		return
+	}
+	ch := chInterface.(chan GetResponse)
+
+	// Convert the result to a get response
+	responseType := C.GoString(result.response_type)
+	var response GetResponse
+	if responseType == "GetHit" {
+		response.Hit = true
+		response.Value = convertCBytesToGoBytes(result.value)
+	} else if responseType == "GetMiss" {
+		response.Hit = false
+	} else if responseType == "Error" {
+		response.Error = C.GoString(result.error_message)
+	}
+
+	// Send the response to the original caller
+	ch <- response
+	C.free_response(result)
+}
+
+func makeSetCall(cacheName string, key string, value string) {
+	// Generate FFI-compatible versions of the variables and set them up to be freed
+	cacheNameC := C.CString(cacheName)
+	defer C.free(unsafe.Pointer(cacheNameC))
+	keyC := convertGoStringToCBytes(key)
+	defer C.free(unsafe.Pointer(keyC.data))
+	valueC := convertGoStringToCBytes(value)
+	defer C.free(unsafe.Pointer(valueC.data))
+
+	// Create the channel the callback will send the response through
+	responseCh := make(chan SetResponse, 1)
+
+	// Generate a key for the channel and store it in the map for the callback to look up
+	id := atomic.AddUint64(&nextID, 1)
+	setContexts.Store(id, responseCh)
+
+	C.protosocket_cache_client_set(
+		cacheNameC,
+		keyC,
+		valueC,
+		C.ProtosocketCallback(C.setCallback),
+		unsafe.Pointer(uintptr(id)),
+	)
+
+	// Wait for the callback to send the response
+	response := <-responseCh
+
+	if response.Success {
+		fmt.Printf("[INFO] set success\n")
+	} else {
+		fmt.Printf("[ERROR] set error: %v\n", response.Error)
+	}
 }
 
 func makeGetCall(cacheName string, key string) {
+	// Generate FFI-compatible versions of the variables and set them up to be freed
 	cacheNameC := C.CString(cacheName)
+	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
+	defer C.free(unsafe.Pointer(keyC.data))
 
-	// Kick off the get operation (runs asynchronously on the tokio runtime) and
-	// receive the initial response with pointers to error or response object
-	initialResponse := C.protosocket_cache_client_get(cacheNameC, keyC)
+	// Create the channel the callback will send the response through
+	responseCh := make(chan GetResponse, 1)
 
-	// If it's already completed, we probably received an error
-	if initialResponse.completed != nil {
-		fmt.Printf("[ERROR] initialResponse.completed is not nil: %v %v\n", initialResponse.completed.response_type, initialResponse.completed.error_message)
-		return
-	}
+	// Generate a key for the channel and store it in the map for the callback to look up
+	id := atomic.AddUint64(&nextID, 1)
+	getContexts.Store(id, responseCh)
 
-	// If both completed and awaiting pointers are nil, something went wrong
-	if initialResponse.awaiting == nil {
-		fmt.Printf("[ERROR] initialResponse.awaiting is unexpectedly nil\n")
-		return
-	}
+	C.protosocket_cache_client_get(
+		cacheNameC,
+		keyC,
+		C.ProtosocketCallback(C.getCallback),
+		unsafe.Pointer(uintptr(id)),
+	)
 
-	// Otherwise we should be awaiting a response object and FFI
-	// should have provided us with an operation id to poll for.
-	op_id := initialResponse.awaiting.operation_id
-	fmt.Printf("[INFO] operation id: %v\n", op_id)
+	// Wait for the callback to send the response
+	response := <-responseCh
 
-	// Poll until we get a response
-	var response *C.ProtosocketResult
-	for {
-		response = C.protosocket_cache_client_poll_responses(op_id)
-		if response != nil {
-			break
-		}
-		// Poll as frequently as desired
-		time.Sleep(10 * time.Microsecond)
-	}
-
-	// Once the response is received, parse response type to determine success or error
-	responseType := C.GoString(response.response_type)
-	if responseType == "GetHit" {
-		getHitValue := convertCBytesToGoBytes(response.value)
-		fmt.Printf("[INFO] get hit | raw value: %v | string value: %s\n", getHitValue, string(getHitValue))
-	} else if responseType == "GetMiss" {
+	if response.Hit {
+		fmt.Printf("[INFO] get hit | raw value: %v | string value: %s\n", response.Value, string(response.Value))
+	} else if response.Error != "" {
+		fmt.Printf("[ERROR] get error: %v\n", response.Error)
+	} else {
 		fmt.Printf("[INFO] get miss\n")
-	} else if responseType == "Error" {
-		fmt.Printf("[ERROR] get error: %v\n", C.GoString(response.error_message))
 	}
-
-	C.free_response(response)
-	C.free(unsafe.Pointer(cacheNameC))
-	C.free(unsafe.Pointer(keyC.data))
 }
