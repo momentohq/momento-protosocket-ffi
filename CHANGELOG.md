@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.1.1...v0.2.0) (2025-10-15)
+
+
+### Features
+
+* Initial callback implementation ([#26](https://github.com/momentohq/momento-protosocket-ffi/issues/26)) ([fc02da0](https://github.com/momentohq/momento-protosocket-ffi/commit/fc02da087d7e2d0a257747600ac246e740e963b3))
+
 ## [0.1.1](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.1.0...v0.1.1) (2025-10-15)
 
 
