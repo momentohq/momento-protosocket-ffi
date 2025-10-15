@@ -16,6 +16,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -92,6 +93,7 @@ func setCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
 	chInterface, ok := setContexts.LoadAndDelete(id)
 	if !ok {
 		C.free_response(result)
+		fmt.Printf("[Error] callback unable to find a channel to send a response\n")
 		return
 	}
 	ch := chInterface.(chan SetResponse)
@@ -119,6 +121,7 @@ func getCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
 	chInterface, ok := getContexts.LoadAndDelete(id)
 	if !ok {
 		C.free_response(result)
+		fmt.Printf("[Error] callback unable to find a channel to send a response\n")
 		return
 	}
 	ch := chInterface.(chan GetResponse)
@@ -165,12 +168,17 @@ func makeSetCall(cacheName string, key string, value string) {
 	)
 
 	// Wait for the callback to send the response
-	response := <-responseCh
-
-	if response.Success {
-		fmt.Printf("[INFO] set success\n")
-	} else {
-		fmt.Printf("[ERROR] set error: %v\n", response.Error)
+	select {
+	case response := <-responseCh:
+		if response.Success {
+			fmt.Printf("[INFO] set success\n")
+		} else {
+			fmt.Printf("[ERROR] set error: %v\n", response.Error)
+		}
+	case <-time.After(30 * time.Second):
+		fmt.Printf("[ERROR] set timeout after 30 seconds\n")
+		// Clean up the stored channel
+		getContexts.Delete(id)
 	}
 }
 
@@ -196,13 +204,18 @@ func makeGetCall(cacheName string, key string) {
 	)
 
 	// Wait for the callback to send the response
-	response := <-responseCh
-
-	if response.Hit {
-		fmt.Printf("[INFO] get hit | raw value: %v | string value: %s\n", response.Value, string(response.Value))
-	} else if response.Error != "" {
-		fmt.Printf("[ERROR] get error: %v\n", response.Error)
-	} else {
-		fmt.Printf("[INFO] get miss\n")
+	select {
+	case response := <-responseCh:
+		if response.Hit {
+			fmt.Printf("[INFO] get hit | raw value: %v | string value: %s\n", response.Value, string(response.Value))
+		} else if response.Error != "" {
+			fmt.Printf("[ERROR] get error: %v\n", response.Error)
+		} else {
+			fmt.Printf("[INFO] get miss\n")
+		}
+	case <-time.After(30 * time.Second):
+		fmt.Printf("[ERROR] get timeout after 30 seconds\n")
+		// Clean up the stored channel
+		getContexts.Delete(id)
 	}
 }
