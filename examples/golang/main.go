@@ -43,14 +43,13 @@ func main() {
 	connectionCount := C.ulong(1)
 	config := C.new_protosocket_client_configuration(timeoutMillis, connectionCount)
 
-	if os.Getenv("MOMENTO_API_KEY") == "" {
-		fmt.Printf("[ERROR] MOMENTO_API_KEY is not set\n")
-		os.Exit(1)
-	}
+	apiKey := os.Getenv("MOMENTO_API_KEY")
 
 	// Create FFI-compatible credential provider
-	envVarName := C.CString("MOMENTO_API_KEY")
-	creds := C.new_protosocket_credential_provider(envVarName)
+	cApiKey := C.CString(apiKey)
+	defer C.free(unsafe.Pointer(cApiKey))
+
+	creds := C.new_protosocket_credential_provider(cApiKey)
 
 	// Create the tokio runtime and the protosocket client under the hood
 	defaultTtlMillis := C.ulonglong(60 * 1000)

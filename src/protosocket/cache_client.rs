@@ -52,12 +52,12 @@ pub extern "C" fn init_protosocket_cache_client(
         .az_id(None)
         .build();
 
-    let env_var_name = unsafe {
-        std::ffi::CStr::from_ptr(credential_provider.env_var_name)
+    let api_key = unsafe {
+        std::ffi::CStr::from_ptr(credential_provider.api_key)
             .to_string_lossy()
             .into_owned()
     };
-    let creds = CredentialProvider::from_env_var(env_var_name).expect("auth token should be valid");
+    let creds = CredentialProvider::from_string(api_key).expect("auth token should be valid");
 
     let client = RUNTIME.block_on(async {
         ProtosocketCacheClient::builder()
