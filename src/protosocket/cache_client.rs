@@ -36,10 +36,6 @@ pub(crate) static RUNTIME_HANDLE: Lazy<tokio::runtime::Handle> =
 
 pub(crate) static mut PROTOSOCKET_CLIENT: *mut ProtosocketCacheClient = std::ptr::null_mut();
 
-pub struct ProtosocketCacheClientWrapper {
-    pub client: *mut ProtosocketCacheClient,
-}
-
 #[unsafe(no_mangle)]
 pub extern "C" fn init_protosocket_cache_client(
     item_default_ttl_millis: c_ulonglong,
