@@ -40,11 +40,6 @@ impl From<Result<GetResponse, MomentoError>> for ProtosocketResult {
                     data: leaked_item.as_ptr(),
                     length: item_len,
                 };
-                println!(
-                    "[FFI INFO] created bytes: {:?} | data: {:?}",
-                    bytes,
-                    unsafe { std::slice::from_raw_parts(bytes.data, bytes.length) }
-                );
                 ProtosocketResult {
                     response_type: ProtosocketResponseType::GetHit.into(),
                     value: Box::into_raw(Box::new(bytes)),
