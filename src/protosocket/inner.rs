@@ -2,7 +2,7 @@ use momento::{
     cache::{GetResponse, SetResponse},
     MomentoError,
 };
-use std::ffi::CString;
+use std::convert::TryInto;
 
 use crate::protosocket::cache_client::{Bytes, ProtosocketResponseType, ProtosocketResult};
 
@@ -11,17 +11,18 @@ impl From<Result<SetResponse, MomentoError>> for ProtosocketResult {
         match value {
             Ok(_) => ProtosocketResult {
                 response_type: ProtosocketResponseType::SetSuccess.into(),
-                value: std::ptr::null(),
-                error_message: std::ptr::null(),
+                value: None,
+                error_message: None,
             },
             Err(error) => ProtosocketResult {
                 response_type: ProtosocketResponseType::Error.into(),
-                value: std::ptr::null(),
-                error_message: CString::new(error.to_string())
-                    .unwrap_or_else(|_| unsafe {
-                        CString::new("Error message contained null byte").unwrap_unchecked()
-                    })
-                    .into_raw(),
+                value: None,
+                error_message: Some(
+                    error
+                        .to_string()
+                        .try_into()
+                        .expect("Error message contains null byte"),
+                ),
             },
         }
     }
@@ -42,23 +43,24 @@ impl From<Result<GetResponse, MomentoError>> for ProtosocketResult {
                 };
                 ProtosocketResult {
                     response_type: ProtosocketResponseType::GetHit.into(),
-                    value: Box::into_raw(Box::new(bytes)),
-                    error_message: std::ptr::null(),
+                    value: Some(Box::new(bytes).into()),
+                    error_message: None,
                 }
             }
             Ok(GetResponse::Miss) => ProtosocketResult {
                 response_type: ProtosocketResponseType::GetMiss.into(),
-                value: std::ptr::null(),
-                error_message: std::ptr::null(),
+                value: None,
+                error_message: None,
             },
             Err(error) => ProtosocketResult {
                 response_type: ProtosocketResponseType::Error.into(),
-                value: std::ptr::null(),
-                error_message: CString::new(error.to_string())
-                    .unwrap_or_else(|_| unsafe {
-                        CString::new("Error message contained null byte").unwrap_unchecked()
-                    })
-                    .into_raw(),
+                value: None,
+                error_message: Some(
+                    error
+                        .to_string()
+                        .try_into()
+                        .expect("Error message contains null byte"),
+                ),
             },
         }
     }

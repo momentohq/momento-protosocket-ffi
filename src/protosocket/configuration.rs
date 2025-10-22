@@ -1,30 +1,45 @@
+use safer_ffi::__::char_p;
+use safer_ffi::{derive_ReprC, ffi_export};
+use std::convert::TryInto;
 use std::fmt;
-use libc::c_char;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive_ReprC]
 #[repr(C)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct ProtosocketClientConfiguration {
     pub(crate) timeout_millis: usize,
     pub(crate) connection_count: usize,
 }
 
-impl ProtosocketClientConfiguration {
-    #[unsafe(no_mangle)]
-    pub extern "C" fn new_protosocket_client_configuration(
-        timeout_millis: usize,
-        connection_count: usize,
-    ) -> ProtosocketClientConfiguration {
-        ProtosocketClientConfiguration {
-            timeout_millis,
-            connection_count,
-        }
+#[ffi_export]
+pub fn new_protosocket_client_configuration(
+    timeout_millis: usize,
+    connection_count: usize,
+) -> ProtosocketClientConfiguration {
+    ProtosocketClientConfiguration {
+        timeout_millis,
+        connection_count,
     }
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive_ReprC]
 #[repr(C)]
+#[derive(Clone)]
 pub struct ProtosocketCredentialProvider {
-    pub(crate) api_key: *const c_char,
+    pub(crate) api_key: char_p::Box,
+}
+
+#[ffi_export]
+pub fn new_protosocket_credential_provider(
+    api_key: char_p::Ref<'_>,
+) -> ProtosocketCredentialProvider {
+    ProtosocketCredentialProvider {
+        api_key: api_key
+            .to_str()
+            .to_string()
+            .try_into()
+            .expect("API Key should not contain null bytes"),
+    }
 }
 
 impl fmt::Debug for ProtosocketCredentialProvider {
@@ -32,14 +47,5 @@ impl fmt::Debug for ProtosocketCredentialProvider {
         f.debug_struct("ProtosocketCredentialProvider")
             .field("api_key", &"<redacted>")
             .finish()
-    }
-}
-
-impl ProtosocketCredentialProvider {
-    #[unsafe(no_mangle)]
-    pub extern "C" fn new_protosocket_credential_provider(
-        api_key: *const c_char,
-    ) -> ProtosocketCredentialProvider {
-        ProtosocketCredentialProvider { api_key }
     }
 }
