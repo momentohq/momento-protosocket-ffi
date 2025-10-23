@@ -40,8 +40,8 @@ var (
 
 func main() {
 	// Create FFI-compatible protosocket configuration
-	timeoutMillis := C.ulong(15_000)
-	connectionCount := C.ulong(1)
+	timeoutMillis := C.size_t(15_000)
+	connectionCount := C.size_t(1)
 	config := C.new_protosocket_client_configuration(timeoutMillis, connectionCount)
 
 	apiKey := os.Getenv("MOMENTO_API_KEY")
@@ -53,7 +53,7 @@ func main() {
 	creds := C.new_protosocket_credential_provider(cApiKey)
 
 	// Create the tokio runtime and the protosocket client under the hood
-	defaultTtlMillis := C.ulonglong(60 * 1000)
+	defaultTtlMillis := C.uint64_t(60 * 1000)
 	C.init_protosocket_cache_client(defaultTtlMillis, config, creds)
 
 	cacheName := "test"
@@ -77,7 +77,7 @@ func convertGoBytesToCBytes(bytes []byte) *C.Bytes_t {
 	C.memcpy(c_bytes, unsafe.Pointer(&bytes[0]), C.size_t(len(bytes)))
 	return &C.Bytes_t{
 		data:   (*C.uchar)(c_bytes),
-		length: C.ulong(len(bytes)),
+		length: C.size_t(len(bytes)),
 	}
 }
 
