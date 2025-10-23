@@ -75,10 +75,11 @@ func convertGoBytesToCBytes(bytes []byte) *C.Bytes_t {
 	}
 	c_bytes := C.malloc(C.size_t(len(bytes)))
 	C.memcpy(c_bytes, unsafe.Pointer(&bytes[0]), C.size_t(len(bytes)))
-	return &C.Bytes_t{
-		data:   (*C.uchar)(c_bytes),
-		length: C.size_t(len(bytes)),
-	}
+	c_struct := (*C.Bytes_t)(C.malloc(C.size_t(unsafe.Sizeof(C.Bytes_t{}))))
+	c_struct.data = (*C.uchar)(c_bytes)
+	c_struct.length = C.size_t(len(bytes))
+
+	return c_struct
 }
 
 func convertCBytesToGoBytes(c_bytes *C.Bytes_t) []byte {
@@ -149,9 +150,11 @@ func makeSetCall(cacheName string, key string, value string) {
 	cacheNameC := C.CString(cacheName)
 	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
+	defer C.free(unsafe.Pointer(keyC))
 	defer C.free(unsafe.Pointer(keyC.data))
 	valueC := convertGoStringToCBytes(value)
 	defer C.free(unsafe.Pointer(valueC.data))
+	defer C.free(unsafe.Pointer(valueC))
 
 	// Create the channel the callback will send the response through
 	responseCh := make(chan SetResponse, 1)
@@ -189,6 +192,7 @@ func makeGetCall(cacheName string, key string) {
 	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
 	defer C.free(unsafe.Pointer(keyC.data))
+	defer C.free(unsafe.Pointer(keyC))
 
 	// Create the channel the callback will send the response through
 	responseCh := make(chan GetResponse, 1)
