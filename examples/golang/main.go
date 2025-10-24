@@ -5,10 +5,11 @@ package main
 #cgo !darwin LDFLAGS: -lgcc_s -lutil -lrt -lpthread
 #cgo darwin LDFLAGS: -framework Security -framework CoreFoundation -lc++ -liconv
 #include "./momento_protosocket_ffi.h"
+#include <stdlib.h>
 #include <string.h>
 
-extern void setCallback(ProtosocketResult* result, void* user_data);
-extern void getCallback(ProtosocketResult* result, void* user_data);
+extern void setCallback(ProtosocketResult_t* result, void* user_data);
+extern void getCallback(ProtosocketResult_t* result, void* user_data);
 */
 import "C"
 import (
@@ -39,8 +40,8 @@ var (
 
 func main() {
 	// Create FFI-compatible protosocket configuration
-	timeoutMillis := C.ulong(15_000)
-	connectionCount := C.ulong(1)
+	timeoutMillis := C.size_t(15_000)
+	connectionCount := C.size_t(1)
 	config := C.new_protosocket_client_configuration(timeoutMillis, connectionCount)
 
 	apiKey := os.Getenv("MOMENTO_API_KEY")
@@ -52,7 +53,7 @@ func main() {
 	creds := C.new_protosocket_credential_provider(cApiKey)
 
 	// Create the tokio runtime and the protosocket client under the hood
-	defaultTtlMillis := C.ulonglong(60 * 1000)
+	defaultTtlMillis := C.uint64_t(60 * 1000)
 	C.init_protosocket_cache_client(defaultTtlMillis, config, creds)
 
 	cacheName := "test"
@@ -61,30 +62,32 @@ func main() {
 
 	makeSetCall(cacheName, key, value)
 	makeGetCall(cacheName, key)
-
-	C.destroy_protosocket_cache_client()
 }
 
-func convertGoStringToCBytes(string string) *C.Bytes {
+func convertGoStringToCBytes(string string) *C.Bytes_t {
 	bytes := []byte(string)
 	return convertGoBytesToCBytes(bytes)
 }
 
-func convertGoBytesToCBytes(bytes []byte) *C.Bytes {
+func convertGoBytesToCBytes(bytes []byte) *C.Bytes_t {
+	if len(bytes) == 0 {
+		return &C.Bytes_t{data: nil, length: 0}
+	}
 	c_bytes := C.malloc(C.size_t(len(bytes)))
 	C.memcpy(c_bytes, unsafe.Pointer(&bytes[0]), C.size_t(len(bytes)))
-	return &C.Bytes{
-		data:   (*C.uchar)(c_bytes),
-		length: C.ulong(len(bytes)),
-	}
+	c_struct := (*C.Bytes_t)(C.malloc(C.size_t(unsafe.Sizeof(C.Bytes_t{}))))
+	c_struct.data = (*C.uchar)(c_bytes)
+	c_struct.length = C.size_t(len(bytes))
+
+	return c_struct
 }
 
-func convertCBytesToGoBytes(c_bytes *C.Bytes) []byte {
+func convertCBytesToGoBytes(c_bytes *C.Bytes_t) []byte {
 	return C.GoBytes(unsafe.Pointer(c_bytes.data), C.int(c_bytes.length))
 }
 
 //export setCallback
-func setCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
+func setCallback(result *C.ProtosocketResult_t, userData unsafe.Pointer) {
 	// Decode the channel ID from the pointer
 	id := uint64(uintptr(userData))
 
@@ -112,7 +115,7 @@ func setCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
 }
 
 //export getCallback
-func getCallback(result *C.ProtosocketResult, userData unsafe.Pointer) {
+func getCallback(result *C.ProtosocketResult_t, userData unsafe.Pointer) {
 	// Decode the channel ID from the pointer
 	id := uint64(uintptr(userData))
 
@@ -147,9 +150,11 @@ func makeSetCall(cacheName string, key string, value string) {
 	cacheNameC := C.CString(cacheName)
 	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
+	defer C.free(unsafe.Pointer(keyC))
 	defer C.free(unsafe.Pointer(keyC.data))
 	valueC := convertGoStringToCBytes(value)
 	defer C.free(unsafe.Pointer(valueC.data))
+	defer C.free(unsafe.Pointer(valueC))
 
 	// Create the channel the callback will send the response through
 	responseCh := make(chan SetResponse, 1)
@@ -162,7 +167,7 @@ func makeSetCall(cacheName string, key string, value string) {
 		cacheNameC,
 		keyC,
 		valueC,
-		C.ProtosocketCallback(C.setCallback),
+		(*[0]byte)(C.setCallback),
 		unsafe.Pointer(uintptr(id)),
 	)
 
@@ -177,7 +182,7 @@ func makeSetCall(cacheName string, key string, value string) {
 	case <-time.After(30 * time.Second):
 		fmt.Printf("[ERROR] set timeout after 30 seconds\n")
 		// Clean up the stored channel
-		getContexts.Delete(id)
+		setContexts.Delete(id)
 	}
 }
 
@@ -187,6 +192,7 @@ func makeGetCall(cacheName string, key string) {
 	defer C.free(unsafe.Pointer(cacheNameC))
 	keyC := convertGoStringToCBytes(key)
 	defer C.free(unsafe.Pointer(keyC.data))
+	defer C.free(unsafe.Pointer(keyC))
 
 	// Create the channel the callback will send the response through
 	responseCh := make(chan GetResponse, 1)
@@ -198,7 +204,7 @@ func makeGetCall(cacheName string, key string) {
 	C.protosocket_cache_client_get(
 		cacheNameC,
 		keyC,
-		C.ProtosocketCallback(C.getCallback),
+		(*[0]byte)(C.getCallback),
 		unsafe.Pointer(uintptr(id)),
 	)
 

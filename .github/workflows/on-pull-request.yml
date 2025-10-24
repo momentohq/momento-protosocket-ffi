@@ -66,6 +66,9 @@ jobs:
           command: build
           args: --locked --release
 
+      - name: Build the headers
+        run: make build-headers
+
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
         run: |
@@ -122,6 +125,9 @@ jobs:
         with:
           command: build
           args: --locked --release
+
+      - name: Build the headers
+        run: make build-headers
 
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
@@ -190,7 +196,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target
@@ -243,7 +252,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target

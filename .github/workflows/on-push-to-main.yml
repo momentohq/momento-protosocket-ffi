@@ -47,6 +47,9 @@ jobs:
           command: build
           args: --locked --release
 
+      - name: Build the headers
+        run: make build-headers
+
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
         run: |
@@ -103,6 +106,9 @@ jobs:
         with:
           command: build
           args: --locked --release
+
+      - name: Build the headers
+        run: make build-headers
 
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
@@ -171,7 +177,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target
@@ -224,7 +233,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target
@@ -284,7 +296,7 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}   
+          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
   build-and-publish-ubuntu-x64:
     runs-on: ubuntu-24.04
@@ -309,6 +321,9 @@ jobs:
         with:
           command: build
           args: --locked --release
+
+      - name: Build the headers
+        run: make build-headers
 
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
@@ -373,6 +388,9 @@ jobs:
         with:
           command: build
           args: --locked --release
+
+      - name: Build the headers
+        run: make build-headers
 
       - name: Show version information (Rust, cargo, GCC)
         shell: bash
@@ -453,7 +471,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target
@@ -516,7 +537,10 @@ jobs:
         with:
           command: build
           args: --locked --release
-  
+
+      - name: Build the headers
+        run: make build-headers
+
       - name: Find .h file
         run: |
           ls target
@@ -546,4 +570,3 @@ jobs:
           echo $GH_ASSET
           curl --data-binary @$ARCHIVE_FILE -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
         shell: bash
-      
