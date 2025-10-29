@@ -21,7 +21,7 @@ You will also need to download the appropriate `.a` and `.h` files from the GitH
 
 ## Setup using locally available C static library
 
-This is the easiest method. Simply put the `.a` and `.h` files in a local directory and update the cgo flags to point to them directly.
+This is the easiest method, especially if you are building from source. Simply put the `.a` and `.h` files in a local directory and update the cgo flags to point to them directly.
 
 The other cgo flags featured here come from the FFI build output. You can remove the `cgo !darwin` or `cgo darwin` lines as needed though.
 
