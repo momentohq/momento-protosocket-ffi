@@ -49,7 +49,17 @@ pub fn init_protosocket_cache_client(
         .build();
 
     let api_key = credential_provider.api_key.to_str();
-    let creds = CredentialProvider::from_string(api_key).expect("auth token should be valid");
+
+    // If there's an override, apply it. Currently assuming that we're doing cache tls endpoint override
+    // because protosocket currently supports only cache get/set.
+    let creds = if let Some(endpoint_override) = credential_provider.endpoint_override {
+        let endpoint = endpoint_override.to_str();
+        CredentialProvider::from_string(api_key)
+            .expect("auth token should be valid")
+            .secure_endpoint_override(endpoint)
+    } else {
+        CredentialProvider::from_string(api_key).expect("auth token should be valid")
+    };
 
     let client = RUNTIME.block_on(async {
         ProtosocketCacheClient::builder()
