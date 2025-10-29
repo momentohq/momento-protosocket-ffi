@@ -964,9 +964,8 @@ dependencies = [
 
 [[package]]
 name = "momento"
-version = "0.55.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b533e4fd6166b4bbd514a7411e6eb878c97a57671f8c85101a656f76558fb525"
+version = "0.54.3"
+source = "git+https://github.com/momentohq/client-sdk-rust?branch=tls-endpoint-override#4b80ddb93ed26f7e4016023908d5e46207d408cd"
 dependencies = [
  "base64",
  "derive_more",

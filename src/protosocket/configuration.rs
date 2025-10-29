@@ -27,6 +27,7 @@ pub fn new_protosocket_client_configuration(
 #[derive(Clone)]
 pub struct ProtosocketCredentialProvider {
     pub(crate) api_key: char_p::Box,
+    pub(crate) endpoint_override: Option<char_p::Box>,
 }
 
 #[ffi_export]
@@ -39,6 +40,28 @@ pub fn new_protosocket_credential_provider(
             .to_string()
             .try_into()
             .expect("API Key should not contain null bytes"),
+        endpoint_override: None,
+    }
+}
+
+#[ffi_export]
+pub fn new_protosocket_credential_provider_with_override(
+    api_key: char_p::Ref<'_>,
+    endpoint_override: char_p::Ref<'_>,
+) -> ProtosocketCredentialProvider {
+    ProtosocketCredentialProvider {
+        api_key: api_key
+            .to_str()
+            .to_string()
+            .try_into()
+            .expect("API Key should not contain null bytes"),
+        endpoint_override: Some(
+            endpoint_override
+                .to_str()
+                .to_string()
+                .try_into()
+                .expect("Endpoint override should not contain null bytes"),
+        ),
     }
 }
 

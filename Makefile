@@ -4,7 +4,7 @@ build:
 build-headers:
 	cargo run --features headers --bin generate-headers
 
-build-go-example: build
+build-go-example: build build-headers
 	cp ./target/release/libmomento_protosocket_ffi.a ./examples/golang
 	cp ./target/momento_protosocket_ffi.h ./examples/golang
 
