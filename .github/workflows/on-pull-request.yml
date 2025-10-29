@@ -59,12 +59,13 @@ jobs:
           toolchain: stable
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
+          target: x86_64-unknown-linux-musl
 
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --locked --release
+          args: --locked --release --target x86_64-unknown-linux-musl
 
       - name: Build the headers
         run: make build-headers
@@ -119,12 +120,13 @@ jobs:
           toolchain: stable
           override: true
           profile: minimal # minimal component installation (ie, no documentation)
+          target: aarch64-unknown-linux-musl
 
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --locked --release
+          args: --locked --release --target aarch64-unknown-linux-musl
 
       - name: Build the headers
         run: make build-headers
