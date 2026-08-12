@@ -262,10 +262,17 @@ jobs:
   generate-readme:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate release bot token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.MOMENTO_RELEASE_APP_ID }}
+          private-key: ${{ secrets.MOMENTO_RELEASE_APP_PRIVATE_KEY }}
+
       - name: Setup repo
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Generate README
         uses: momentohq/standards-and-practices/github-actions/generate-and-commit-oss-readme@gh-actions-v2
@@ -293,19 +300,26 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.release.outputs.version }}
     steps:
+      - name: Generate release bot token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.MOMENTO_RELEASE_APP_ID }}
+          private-key: ${{ secrets.MOMENTO_RELEASE_APP_PRIVATE_KEY }}
+
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
   build-and-publish-ubuntu-x64:
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
 
@@ -357,7 +371,7 @@ jobs:
           cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
           tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
-          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          AUTH="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
           GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
@@ -366,13 +380,13 @@ jobs:
         shell: bash
 
   build-and-publish-ubuntu-arm64:
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04-arm
     needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
       - uses: Swatinem/rust-cache@v2
 
@@ -429,7 +443,7 @@ jobs:
           cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
           tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
-          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          AUTH="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
           GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
@@ -438,13 +452,13 @@ jobs:
         shell: bash
 
   build-and-publish-macos-x64:
+    permissions:
+      contents: write
     runs-on: macos-15-intel
     needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}
 
       - name: Install protoc
         run: brew install protobuf
@@ -497,7 +511,7 @@ jobs:
           cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
           tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
-          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          AUTH="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
           GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
@@ -506,6 +520,8 @@ jobs:
         shell: bash
 
   build-and-publish-macos-arm64:
+    permissions:
+      contents: write
     runs-on: macos-15
     needs: [release-please]
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
@@ -563,7 +579,7 @@ jobs:
           cp ./target/release/libmomento_protosocket_ffi.a ./libmomento_protosocket_ffi.a
           cp ./examples/pkg-config-setup/momento_protosocket_ffi.pc ./momento_protosocket_ffi.pc
           tar -zcvf $ARCHIVE_FILE ./momento_protosocket_ffi.h ./libmomento_protosocket_ffi.a ./momento_protosocket_ffi.pc
-          AUTH="Authorization: token ${{ secrets.MOMENTO_MACHINE_USER_GITHUB_TOKEN }}"
+          AUTH="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
           LATEST_RELEASE=$(curl -sH "$AUTH" https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION})
           RELEASE_ID=$(echo $LATEST_RELEASE | jq -r .id)
           GH_ASSET="https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}/assets?name=${ARCHIVE_FILE}"
