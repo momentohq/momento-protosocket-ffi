@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.2.1...v0.2.2) (2026-08-13)
+
+
+### Bug Fixes
+
+* bump actions/setup-go to v5 ([#41](https://github.com/momentohq/momento-protosocket-ffi/issues/41)) ([760f07e](https://github.com/momentohq/momento-protosocket-ffi/commit/760f07e7a2a795cb64e2d8418d09737279cf6807))
+
+
+### Miscellaneous
+
+* retire the machine-user release token ([#40](https://github.com/momentohq/momento-protosocket-ffi/issues/40)) ([0439718](https://github.com/momentohq/momento-protosocket-ffi/commit/0439718164919f50e7e459f1bc83a0fb57706cd7))
+
 ## [0.2.1](https://github.com/momentohq/momento-protosocket-ffi/compare/v0.2.0...v0.2.1) (2025-10-20)
 
 
